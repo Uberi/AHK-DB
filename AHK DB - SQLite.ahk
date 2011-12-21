@@ -1,7 +1,7 @@
 #NoEnv
 
 DB := new Database()
-DB.Open()
+DB.Open("place")
 
 class Database
 {
@@ -21,12 +21,11 @@ class Database
  }
 
  ;open a database or create one if it does not exist
- Open(DatabaseFile = ":memory:")
+ Open(DatabaseFile = ":memory:") ;filename of the database (omit to create database in memory, or blank to create a database in a temporary file)
  {
-  static SuccessCode := ReturnValue("SQLITE_OK")
-  Value := DllCall("sqlite3\sqlite3_open","Str",DBFile,"UPtr*",hDatabase,"CDecl Int") ;open the database file
-  If (Value != SuccessCode) ;failed to open database
-   Throw Exception("SQLite error " . Value . " (" . This.ReturnValue(Value) . ")."
+  Value := DllCall("sqlite3\sqlite3_open","UPtr",&DatabaseFile,"UPtr*",hDatabase,"CDecl Int") ;open the database file
+  If (Value != This.ReturnValue("SQLITE_OK")) ;failed to open database
+   Throw Exception("SQLite error " . Value . " (" . Database.ReturnValue(Value) . ").",-1)
   Return, This
  }
 
