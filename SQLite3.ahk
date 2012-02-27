@@ -233,9 +233,14 @@ SQLiteGetLastError(ByRef hDatabase,ByRef ErrorMessage,ByRef UseExtended = 0) ;Da
  static Code4618 := "IOERR_SHMOPEN"
  static Code4874 := "IOERR_SHMSIZE"
  static Code5130 := "IOERR_SHMLOCK"
+ static Code5386 := "IOERR_SHMMAP"
+ static Code5642 := "IOERR_SEEK"
  static Code262 := "LOCKED_SHAREDCACHE"
  static Code261 := "BUSY_RECOVERY"
  static Code270 := "CANTOPEN_NOTEMPDIR"
+ static Code267 := "CORRUPT_VTAB"
+ static Code264 := "READONLY_RECOVERY"
+ static Code520 := "READONLY_CANTLOCK"
 
  ErrorMessage := DllCall("SQLite3\sqlite3_" . (UseExtended ? "extended_" : "") . "errcode","UInt",hDatabase,"Cdecl UInt"), ErrorMessage := "SQLITE_" . Code%ErrorMessage% . ": " . DllCall("sqlite3\sqlite3_errmsg","UInt",hDatabase,"Cdecl Str")
  Return, 0
