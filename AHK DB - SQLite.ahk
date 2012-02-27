@@ -1,7 +1,9 @@
 #NoEnv
 
-DB := new Database()
-DB.Open("place")
+DB := new Database
+DB.Open()
+q := DB.PrepareQuery("")
+Return
 
 class Database
 {
@@ -79,6 +81,7 @@ class Database
         Database.DatabaseCount ++ ;increment the database count
 
         this.hDatabase := 0
+        
     }
 
     __Delete()
@@ -92,17 +95,50 @@ class Database
     Open(DatabaseFile = ":memory:") ;filename of the database (omit to create database in memory, or blank to create a database in a temporary file)
     {
         Value := DllCall("sqlite3\sqlite3_open" . (A_IsUnicode ? "16" : ""),"Str",DatabaseFile,"UPtr*",hDatabase,"CDecl Int") ;open the database file
-        If this.ReturnValues[Value] != "SQLITE_OK" ;error opening database
-            throw Exception("SQLite error " . Value . "(" . this.ReturnValues[Value] . ").")
+        If this.ReturnValues[Value] != "SQLITE_OK"
+            throw Exception("Could not open database: SQLite error " . Value . " (" . this.ReturnValues[Value] . ").")
         this.hDatabase := hDatabase
         Return, this
     }
 
+    PrepareQuery(SQL)
+    {
+        If !this.hDatabase
+            throw Exception("Database not opened.",-1)
+        Return, new this.Query(this,SQL)
+    }
+
     class Query
     {
-        __New(SQL)
+        __New(Database,SQL)
         {
-            DllCall("sqlite3\sqlite3_prepare" . (A_IsUnicode ? "16" : "") . "_v2","UPtr",hDatabase,"Str",SQL,"Int",StrLen(SQL) << !!A_IsUnicode,"UPtr*",hQuery,"UPtr",0,"CDecl Int")
+            this.ReturnValues := Database.ReturnValues
+            Value := DllCall("sqlite3\sqlite3_prepare" . (A_IsUnicode ? "16" : "") . "_v2","UPtr",Database.hDatabase,"Str",SQL,"Int",StrLen(SQL) << !!A_IsUnicode,"UPtr*",hQuery,"UPtr",0,"CDecl Int")
+            If this.ReturnValues[Value] != "SQLITE_OK"
+                throw Exception("Could not create query: SQLite error " . Value . " (" . Database.ReturnValues[Value] . ").")
+            If !hQuery ;wip: not sure if this is needed, since the null handle may be a no-op in all the functions
+                throw Exception("Could not create query: input does not contain SQL text.")
+            this.hQuery := hQuery
+            this.SQL := SQL
+        }
+
+        Evaluate()
+        {
+            ;wip
+        }
+
+        Reset()
+        {
+            Value := DllCall("sqlite3\sqlite3_reset","UPtr",this.hQuery,"CDecl Int")
+            If this.ReturnValues[Value] != "SQLITE_OK"
+                throw Exception("Could not reset query: SQLite error " . Value . " (" . this.ReturnValues[Value] . ").")
+        }
+
+        __Delete()
+        {
+            Value := DllCall("sqlite3\sqlite3_finalize","UPtr",this.hQuery,"CDecl Int")
+            If this.ReturnValues[Value] != "SQLITE_OK"
+                throw Exception("Could not delete query: SQLite error " . Value . " (" . this.ReturnValues[Value] . ").")
         }
     }
 }
